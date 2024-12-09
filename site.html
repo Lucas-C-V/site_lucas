@@ -3,9 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solar App</title>
+    <title>Site de Lucas e Vini</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        header {
+            background-color: #1e90ff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        form {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        form label {
+            flex: 1 1 100%;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        form input {
+            flex: 1 1 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #1e90ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0073e6;
+        }
+
         #loading {
             display: none;
             position: fixed;
@@ -20,36 +79,70 @@
             font-size: 24px;
             font-weight: bold;
         }
+
+        #graphs {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        #graphs img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #1e90ff;
+            color: white;
+            margin-top: 30px;
+            border-radius: 0 0 8px 8px;
+        }
     </style>
 </head>
 <body>
-    <h1>Simulador de Células Fotovoltaicas</h1>
-    <form id="graph-form">
-        <label for="icc">Corrente de Curto-Circuito (Icc):</label>
-        <input type="text" id="icc" name="icc" required><br><br>
+    <header>
+        <h1>Site de Lucas e Vini</h1>
+    </header>
 
-        <label for="kt">Coeficiente de Temperatura (Kt):</label>
-        <input type="text" id="kt" name="kt" required><br><br>
-
-        <label for="vdc">Tensão de Circuito Aberto (Vdc):</label>
-        <input type="text" id="vdc" name="vdc" required><br><br>
-
-        <label for="vmp">Tensão de Máxima Energia (Vmp):</label>
-        <input type="text" id="vmp" name="vmp" required><br><br>
-
-        <button type="submit">Gerar Gráficos</button>
-    </form>
-
-    <div id="loading">Gerando gráficos, aguarde...</div>
-
-    <h2>Gráficos Gerados</h2>
-    <div id="graphs">
-        {% if graph_paths %}
-            {% for path in graph_paths %}
-                <img src="{{ path }}" alt="Graph" style="width: 100%; max-width: 600px; margin-top: 20px;">
-            {% endfor %}
-        {% endif %}
+    <div class="container">
+        <form id="graph-form">
+            <div>
+                <label for="isc">Corrente de Curto-Circuito (Isc):</label>
+                <input type="text" id="isc" name="I_SC" required>
+            </div>
+            <div>
+                <label for="tc">Coeficiente de Temperatura (TC):</label>
+                <input type="text" id="tc" name="TC" required>
+            </div>
+            <div>
+                <label for="vdc">Tensão de Circuito Aberto (Vdc):</label>
+                <input type="text" id="vdc" name="Vdc" required>
+            </div>
+            <div>
+                <label for="vmp">Tensão de Máxima Energia (Vmp):</label>
+                <input type="text" id="vmp" name="Vmp" required>
+            </div>
+            <div style="text-align: center; width: 100%;">
+                <button type="submit">Gerar Gráficos</button>
+            </div>
+        </form>
+        <div id="loading">Gerando gráficos, aguarde...</div>
     </div>
+
+    <div class="container">
+        <h2>Gráficos Gerados</h2>
+        <div id="graphs">
+            <!-- Gráficos gerados dinamicamente -->
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2024 Site de Lucas e Vini - Simulador de Células Fotovoltaicas</p>
+    </footer>
 
     <script>
         $(document).ready(function () {
@@ -60,7 +153,7 @@
                 $.post("/generate_graphs", $(this).serialize(), function (data) {
                     $("#loading").hide();
                     data.forEach(function (path) {
-                        $("#graphs").append(`<img src="${path}" alt="Graph" style="width: 100%; max-width: 600px; margin-top: 20px;">`);
+                        $("#graphs").append(`<img src="${path}" alt="Graph">`);
                     });
                 });
             });
