@@ -1,6 +1,15 @@
+from flask import Flask, render_template, request, send_from_directory, jsonify
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+# Configuração da aplicação Flask
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'static/graphs'
+
+# Certifique-se de que o diretório para salvar gráficos existe
+os.makedirs(site.config['UPLOAD_FOLDER'], exist_ok=True)
 I_SC=13.79 
 Vdc=49.34
 Vmp=40.66
