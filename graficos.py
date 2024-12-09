@@ -1,51 +1,35 @@
-from flask import Flask, render_template, request, send_from_directory, jsonify
+from flask import Flask, render_template, request, jsonify
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 # Configuração da aplicação Flask
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'static/graphs'
+site = Flask(__name__)
+site.config['UPLOAD_FOLDER'] = 'static/graphs'
 
 # Certifique-se de que o diretório para salvar gráficos existe
 os.makedirs(site.config['UPLOAD_FOLDER'], exist_ok=True)
-I_SC=13.79 
-Vdc=49.34
-Vmp=40.66
-TC=0.0028
 
-def celula_irradiancia_variando(I_SC, Vdc, Vmp, TC):
-    # Constantes globais
-    q = 1.60217662e-19  # Carga elementar (em Coulombs)
-    k = 1.38064852e-23  # Constante de Boltzmann (em J/K)
-    n = 1.4  # Fator de idealidade
-
-    # Variáveis
-    T = 298.15  # Temperatura da célula (em Kelvin)
-    I_r = np.arange(200, 1001, 200)  # irradiância (de 200 a 1000 com step de 200)
-    V = np.linspace(0, Vmp / Vdc, 35)  # Tensão como variável de entrada
-
-    T_0 = 298.15  # Temperatura de referência (25°C em Kelvin)
-    I_r0 = 1000  # Irradiância de referência (em W/m²)
-    V_OC = 0.721  # Tensão de circuito aberto de referência (em Volts)
-    V_g = 1.79e-19  # Bandgap em Joules
-    I_s0 = 1.2799e-8  # Corrente de saturação na temperatura de referência
-
-    # Criando a malha para tensão e irradiância
+def celula_irradiancia_variando(I_SC, Vdc, Vmp, TC, folder):
+    q = 1.60217662e-19
+    k = 1.38064852e-23
+    n = 1.4
+    T = 298.15
+    I_r = np.arange(200, 1001, 200)
+    V = np.linspace(0, Vmp / Vdc, 35)
+    T_0 = 298.15
+    I_r0 = 1000
+    V_OC = 0.721
+    V_g = 1.79e-19
+    I_s0 = 1.2799e-8
     V_m, I_rm = np.meshgrid(V, I_r)
-
-    # Equações baseadas no artigo referenciado
-    I_ph = ((I_SC / I_r0) * I_rm) * (1 + TC * (T - T_0))  # Fotocorrente
-    I_s = I_s0 * (T / T_0)**(3 / n) * np.exp((-(q * V_g) / (n * k)) * ((1 / T) - (1 / T_0)))  # Corrente de saturação
-    I = I_ph - I_s * np.exp(((q * V_m) / (n * k * T)) - 1)  # Corrente total
-    P = I * V_m  # Potência
-
-    # Evitando valores inconsistentes
+    I_ph = ((I_SC / I_r0) * I_rm) * (1 + TC * (T - T_0))
+    I_s = I_s0 * (T / T_0)**(3 / n) * np.exp((-(q * V_g) / (n * k)) * ((1 / T) - (1 / T_0)))
+    I = I_ph - I_s * np.exp(((q * V_m) / (n * k * T)) - 1)
+    P = I * V_m
     Iplot = np.where(I < 0, np.nan, I)
     Pplot = np.where(P < 0, np.nan, P)
 
-    # Gráficos
     plt.figure(1)
     for i in range(len(I_r)):
         plt.plot(V, Iplot[i, :], label=f'I_r = {I_r[i]} W/m²')
@@ -54,6 +38,9 @@ def celula_irradiancia_variando(I_SC, Vdc, Vmp, TC):
     plt.title('Curva I-V')
     plt.legend()
     plt.grid(True)
+    iv_path = os.path.join(folder, "iv_graph.png")
+    plt.savefig(iv_path)
+    plt.close()
 
     plt.figure(2)
     for i in range(len(I_r)):
@@ -63,68 +50,27 @@ def celula_irradiancia_variando(I_SC, Vdc, Vmp, TC):
     plt.title('Curva P-V')
     plt.legend()
     plt.grid(True)
+    pv_path = os.path.join(folder, "pv_graph.png")
+    plt.savefig(pv_path)
+    plt.close()
 
-   
+    return [iv_path, pv_path]
 
-def celula_temperatura_variando(I_SC, Vdc, Vmp, TC):
-    # Constantes
-    q = 1.60217662e-19  # Carga elementar (C)
-    k = 1.38064852e-23  # Constante de Boltzmann (J/K)
-    n = 1.4  # Fator de idealidade
-    I_r = 800  # Irradiância fixa (W/m²)
-    T_0 = 298.15  # Temperatura de referência (K)
-    V_OC = 0.721  # Tensão de circuito aberto (V)
-    V_g = 1.79e-19  # Bandgap em Joules
+@site.route('/')
+def index():
+    return render_template('index.html')
 
-    # Tensão como variável de entrada
-    V = np.linspace(0, Vmp / Vdc, 35)
+@site.route('/generate_graphs', methods=['POST'])
+def generate_graphs():
+    I_SC = float(request.form['I_SC'])
+    TC = float(request.form['TC'])
+    Vdc = float(request.form['Vdc'])
+    Vmp = float(request.form['Vmp'])
 
-    # Intervalo de temperaturas (298.15 K a 338.15 K em passos de 10 K)
-    temperatures = np.arange(298.15, 338.15 + 1, 10)
+    folder = site.config['UPLOAD_FOLDER']
+    graph_paths = celula_irradiancia_variando(I_SC, Vdc, Vmp, TC, folder)
 
-    # Matrizes para armazenar os resultados
-    Iplot2 = np.zeros((len(temperatures), len(V)))
-    Pplot2 = np.zeros((len(temperatures), len(V)))
+    return jsonify(graph_paths)
 
-    # Loop sobre as temperaturas
-    for i, T in enumerate(temperatures):
-        I_s0 = 1.2799e-8  # Corrente de saturação na temperatura de referência
-        I_ph = ((I_SC / I_r) * I_r) * (1 + TC * (T - T_0))  # Fotocorrente
-        I_s = I_s0 * (T / T_0)**(3 / n) * np.exp((-(q * V_g) / (n * k)) * ((1 / T) - (1 / T_0)))  # Corrente de saturação
-        I = I_ph - I_s * np.exp(((q * V) / (n * k * T)) - 1)  # Corrente total
-        P = I * V  # Potência
-
-        # Tratando valores inconsistentes
-        Iplot3 = np.where(I < 0, np.nan, I)
-        Pplot3 = np.where(P < 0, np.nan, P)
-
-        # Salvando os resultados
-        Iplot2[i, :] = Iplot3
-        Pplot2[i, :] = Pplot3
-
-    # Plotando as curvas de corrente
-    plt.figure(3)
-    for i, T in enumerate(temperatures):
-        plt.plot(V, Iplot2[i, :], label=f'T = {T:.2f} K')
-    plt.xlabel('Tensão (V)')
-    plt.ylabel('Corrente (I)')
-    plt.title('Variação da Corrente com a Temperatura')
-    plt.legend()
-    plt.grid(True)
-
-    # Plotando as curvas de potência
-    plt.figure(4)
-    for i, T in enumerate(temperatures):
-        plt.plot(V, Pplot2[i, :], label=f'T = {T:.2f} K')
-    plt.xlabel('Tensão (V)')
-    plt.ylabel('Potência (P)')
-    plt.title('Variação da Potência com a Temperatura')
-    plt.legend()
-    plt.grid(True)
-   
-
-celula_irradiancia_variando(I_SC, Vdc, Vmp, TC)
-celula_temperatura_variando(I_SC, Vdc, Vmp, TC)
-
-# Mostrando os gráficos
-plt.show()
+if __name__ == '__main__':
+    site.run(debug=True)
