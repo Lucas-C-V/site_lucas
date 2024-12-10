@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,6 +10,7 @@ site.config['UPLOAD_FOLDER'] = 'static/graphs'
 # Certifique-se de que o diretório para salvar gráficos existe
 os.makedirs(site.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# Funções de geração de gráficos (sem alterações aqui)
 def celula_irradiancia_variando(I_SC, Vdc, Vmp, TC, folder):
     q = 1.60217662e-19
     k = 1.38064852e-23
@@ -56,10 +57,12 @@ def celula_irradiancia_variando(I_SC, Vdc, Vmp, TC, folder):
 
     return [iv_path, pv_path]
 
+# Rota para servir o index.html diretamente
 @site.route('/')
 def index():
-    return render_template('index.html')
+    return send_from_directory('.', 'index.html')
 
+# Rota para gerar os gráficos
 @site.route('/generate_graphs', methods=['POST'])
 def generate_graphs():
     I_SC = float(request.form['I_SC'])
