@@ -10,7 +10,7 @@ site.config['UPLOAD_FOLDER'] = 'static/graphs'
 # Certifique-se de que o diretório para salvar gráficos existe
 os.makedirs(site.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Funções de geração de gráficos (sem alterações aqui)
+# Funções de geração de gráficos 
 def celula_irradiancia_variando(I_SC, Vdc, Vmp, TC, folder):
     q = 1.60217662e-19
     k = 1.38064852e-23
